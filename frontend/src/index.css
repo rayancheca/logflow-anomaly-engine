@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  @apply font-sans text-slate-100 antialiased;
+  background:
+    radial-gradient(1200px 700px at 15% -10%, rgba(45,212,191,0.08), transparent 60%),
+    radial-gradient(900px 600px at 90% 10%, rgba(168,85,247,0.06), transparent 60%),
+    linear-gradient(180deg, #060810 0%, #07090d 100%);
+}
+
+/* thin scrollbars for the log feed */
+.scroll-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 3px;
+}
+.scroll-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* grid overlay for the card backgrounds */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.panel {
+  @apply rounded-xl bg-ink-800/60 border border-white/5 backdrop-blur-sm;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.03),
+    0 10px 36px -18px rgba(0,0,0,0.7);
+}
+
+.panel-title {
+  @apply text-[10px] uppercase tracking-[0.18em] text-slate-400 font-semibold;
+}
+
+.mono { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
