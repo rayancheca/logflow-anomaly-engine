@@ -49,9 +49,11 @@ class RollingStat:
 
 
 class AnomalyDetector:
-    def __init__(self, zscore_threshold: float, contamination: float) -> None:
+    def __init__(self, zscore_threshold: float, contamination: float, warmup_seconds: float = 25.0) -> None:
         self.zscore_threshold = zscore_threshold
         self.contamination = contamination
+        self.warmup_seconds = warmup_seconds
+        self._started_at = time.time()
         self._rate_stats: dict[str, RollingStat] = defaultdict(RollingStat)
         self._error_stats: dict[str, RollingStat] = defaultdict(RollingStat)
         self._latency_stats: dict[str, RollingStat] = defaultdict(RollingStat)
@@ -130,11 +132,14 @@ class AnomalyDetector:
             if tid in self._seen_template_ids:
                 continue
             self._seen_template_ids.add(tid)
+            # Suppress during warmup — every template is "new" at boot
+            if (now - self._started_at) < self.warmup_seconds:
+                continue
             svc = service_hint.get(tid, "unknown")
             if svc == "unknown":
                 continue
             out.append(self._mk(
-                kind="new_template", service=svc, severity=0.55,
+                kind="new_template", service=svc, severity=0.6,
                 description=f"new log template: \"{text[:70]}\"",
             ))
         return out

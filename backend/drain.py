@@ -14,7 +14,15 @@ import re
 from dataclasses import dataclass, field
 from typing import Iterable
 
-_PARAM_RX = re.compile(r"[0-9]+(?:\.[0-9]+)?|[a-f0-9]{8,}|sku_[a-zA-Z0-9]+|u_[0-9]+|id_[a-f0-9]+")
+_PARAM_RX = re.compile(
+    r"[a-f0-9]{6,}"
+    r"|sku_[a-zA-Z0-9]+"
+    r"|u_[0-9]+"
+    r"|id_[a-f0-9]+"
+    r"|p_[0-9]+"
+    r"|sess_[a-zA-Z0-9]+"
+    r"|[0-9]+(?:\.[0-9]+)?"
+)
 
 
 def _tokenize(message: str) -> list[str]:
