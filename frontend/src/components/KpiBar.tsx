@@ -42,6 +42,12 @@ export default function KpiBar({ kpi }: Props) {
       tone: "info",
     },
     {
+      label: "incidents",
+      value: kpi ? String(kpi.active_incidents) : "—",
+      sub: "correlated clusters",
+      tone: kpi && kpi.active_incidents > 0 ? "bad" : "good",
+    },
+    {
       label: "anomalies · 60s",
       value: kpi ? String(kpi.anomalies_last_min) : "—",
       sub: "across all detectors",
@@ -55,15 +61,15 @@ export default function KpiBar({ kpi }: Props) {
     },
   ];
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mt-6">
       {cards.map((c) => (
         <div key={c.label} className="panel p-4 relative overflow-hidden">
           <div className="absolute -right-10 -top-10 w-32 h-32 rounded-full bg-gradient-to-br from-white/[0.03] to-transparent blur-2xl pointer-events-none" />
           <div className="panel-title">{c.label}</div>
-          <div className={`mt-2 text-3xl font-semibold mono ${toneClass(c.tone)}`}>
+          <div className={`mt-2 text-[28px] font-semibold mono leading-none ${toneClass(c.tone)}`}>
             {c.value}
           </div>
-          <div className="text-[11px] text-slate-500 mt-1">{c.sub}</div>
+          <div className="text-[11px] text-slate-500 mt-2">{c.sub}</div>
         </div>
       ))}
     </div>

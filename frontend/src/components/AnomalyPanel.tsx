@@ -10,12 +10,14 @@ const KIND_LABEL: Record<AnomalyKind, string> = {
   rate_spike:       "RATE",
   feature_outlier:  "IFOREST",
   new_template:     "NEW TMPL",
+  rule_fired:       "RULE",
 };
 
 const KIND_STYLE: Record<AnomalyKind, string> = {
   rate_spike:      "bg-signal-red/10 text-signal-red border-signal-red/30",
   feature_outlier: "bg-signal-violet/10 text-signal-violet border-signal-violet/30",
   new_template:    "bg-signal-amber/10 text-signal-amber border-signal-amber/30",
+  rule_fired:      "bg-signal-cyan/10 text-signal-cyan border-signal-cyan/30",
 };
 
 function fmtTs(ts: number): string {

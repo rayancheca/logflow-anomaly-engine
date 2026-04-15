@@ -7,7 +7,9 @@ export default function ScenarioControls() {
   const [fired, setFired] = useState<string | null>(null);
 
   useEffect(() => {
-    listScenarios().then(setScenarios).catch(() => setScenarios([]));
+    listScenarios()
+      .then((d) => setScenarios(d.scenarios))
+      .catch(() => setScenarios([]));
   }, []);
 
   async function fire(name: string) {

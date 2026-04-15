@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef } from "react";
 import * as d3 from "d3";
-import type { Anomaly, ServiceGraphSnapshot } from "../types";
+import type { Incident, ServiceGraphSnapshot } from "../types";
 
 interface Props {
   graph: ServiceGraphSnapshot;
-  anomaly: Anomaly | null;
+  incident: Incident | null;
+  onNodeClick?: (service: string) => void;
 }
 
 interface SimNode extends d3.SimulationNodeDatum {
@@ -28,12 +29,13 @@ const GROUP_COLOR: Record<string, string> = {
   other:    "#94a3b8",
 };
 
-export default function ServiceGraph({ graph, anomaly }: Props) {
+export default function ServiceGraph({ graph, incident, onNodeClick }: Props) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const simRef = useRef<d3.Simulation<SimNode, SimLink> | null>(null);
   const nodeMap = useRef<Map<string, SimNode>>(new Map());
 
-  const blastHops = useMemo(() => anomaly?.blast_hops ?? {}, [anomaly]);
+  const blastHops = useMemo(() => incident?.impact_hops ?? {}, [incident]);
+  const rootService = incident?.root_service ?? null;
 
   useEffect(() => {
     if (!svgRef.current) return;
@@ -107,7 +109,7 @@ export default function ServiceGraph({ graph, anomaly }: Props) {
       .attr("stroke", (d) => {
         const src = (d.source as SimNode).id;
         const tgt = (d.target as SimNode).id;
-        if (anomaly && (src in blastHops) && (tgt in blastHops)) {
+        if (incident && (src in blastHops) && (tgt in blastHops)) {
           return "rgba(244,63,94,0.8)";
         }
         return "rgba(148,163,184,0.22)";
@@ -137,12 +139,12 @@ export default function ServiceGraph({ graph, anomaly }: Props) {
       .attr("filter", (d) => (d.id in blastHops ? "url(#glow)" : null));
 
     nodeMerged.select<SVGCircleElement>("circle.ring-pulse")
-      .attr("r", (d) => (d.id === anomaly?.service ? 14 : 0))
+      .attr("r", (d) => (d.id === rootService ? 14 : 0))
       .attr("fill", "none")
       .attr("stroke", "#f43f5e")
       .attr("stroke-width", 1.5)
-      .attr("opacity", (d) => (d.id === anomaly?.service ? 0.85 : 0))
-      .attr("class", (d) => (d.id === anomaly?.service ? "ring-pulse animate-pulseRing" : "ring-pulse"));
+      .attr("opacity", (d) => (d.id === rootService ? 0.85 : 0))
+      .attr("class", (d) => (d.id === rootService ? "ring-pulse animate-pulseRing" : "ring-pulse"));
 
     nodeMerged.select<SVGTextElement>("text.label")
       .attr("text-anchor", "middle")
@@ -173,6 +175,12 @@ export default function ServiceGraph({ graph, anomaly }: Props) {
       merge.append("feMergeNode").attr("in", "SourceGraphic");
     }
 
+    // --- click to open service drawer
+    nodeMerged.style("cursor", onNodeClick ? "pointer" : "default")
+      .on("click", (_event, d: SimNode) => {
+        if (onNodeClick) onNodeClick(d.id);
+      });
+
     // --- drag behaviour
     nodeMerged.call(
       d3.drag<SVGGElement, SimNode>()
@@ -195,7 +203,7 @@ export default function ServiceGraph({ graph, anomaly }: Props) {
         .attr("y2", (d) => (d.target as SimNode).y ?? 0);
       nodeMerged.attr("transform", (d) => `translate(${d.x ?? 0},${d.y ?? 0})`);
     });
-  }, [graph, anomaly, blastHops]);
+  }, [graph, incident, blastHops, rootService, onNodeClick]);
 
   return (
     <div className="relative">
