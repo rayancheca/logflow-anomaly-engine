@@ -120,7 +120,9 @@ class Storage:
     def timeline(self, window_seconds: int, buckets: int = 60) -> list[TimelinePoint]:
         """Return per-second histogram of total/error/warn counts."""
         now = time.time()
-        start = now - window_seconds
+        end_sec = int(now) + 1
+        start_sec = end_sec - buckets
+        start = float(start_sec)
         with self._lock:
             rows = self._conn.execute(
                 f"""
@@ -139,7 +141,7 @@ class Storage:
         by_sec = {int(r[0]): (r[1], r[2], r[3]) for r in rows}
         out: list[TimelinePoint] = []
         for i in range(buckets):
-            sec = int(start) + i
+            sec = start_sec + i
             t = by_sec.get(sec, (0, 0, 0))
             out.append(TimelinePoint(ts=float(sec), total=t[0], errors=t[1], warns=t[2]))
         return out
