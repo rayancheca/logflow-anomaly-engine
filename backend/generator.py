@@ -168,36 +168,81 @@ class Generator:
         return list(TOPOLOGY.keys())
 
     def inject(self, kind: str) -> Scenario | None:
-        """Inject a named failure scenario. Returns the scenario object."""
+        """Inject a named failure scenario + its downstream cascade."""
         kind = kind.lower()
-        presets = {
-            "payments_outage": Scenario(
-                service="payments", level_override="ERROR",
-                multiplier=4.0, latency_mul=5.0, ttl=30.0,
+        presets: dict[str, tuple[Scenario, list[Scenario]]] = {
+            "payments_outage": (
+                Scenario(service="payments", level_override="ERROR",
+                         multiplier=4.5, latency_mul=5.0, ttl=35.0),
+                [
+                    Scenario(service="ledger",        level_override="WARN",
+                             multiplier=2.0, latency_mul=1.6, ttl=32.0),
+                    Scenario(service="checkout",      level_override="WARN",
+                             multiplier=2.2, latency_mul=1.8, ttl=32.0),
+                    Scenario(service="notifications", level_override="WARN",
+                             multiplier=1.8, latency_mul=1.2, ttl=28.0),
+                ],
             ),
-            "catalog_latency": Scenario(
-                service="catalog", level_override="WARN",
-                multiplier=2.5, latency_mul=8.0, ttl=25.0,
+            "catalog_latency": (
+                Scenario(service="catalog", level_override="WARN",
+                         multiplier=2.8, latency_mul=8.0, ttl=28.0),
+                [
+                    Scenario(service="search", level_override="WARN",
+                             multiplier=1.8, latency_mul=3.0, ttl=24.0),
+                    Scenario(service="cart",   level_override="WARN",
+                             multiplier=1.5, latency_mul=2.2, ttl=22.0),
+                ],
             ),
-            "inventory_deadlock": Scenario(
-                service="inventory", level_override="ERROR",
-                multiplier=3.5, latency_mul=3.0, ttl=20.0,
+            "inventory_deadlock": (
+                Scenario(service="inventory", level_override="ERROR",
+                         multiplier=3.5, latency_mul=3.5, ttl=25.0),
+                [
+                    Scenario(service="checkout",    level_override="WARN",
+                             multiplier=2.0, latency_mul=2.0, ttl=22.0),
+                    Scenario(service="fulfillment", level_override="WARN",
+                             multiplier=1.8, latency_mul=1.4, ttl=20.0),
+                ],
             ),
-            "notifications_flood": Scenario(
-                service="notifications", level_override="WARN",
-                multiplier=5.0, latency_mul=1.5, ttl=25.0,
+            "notifications_flood": (
+                Scenario(service="notifications", level_override="WARN",
+                         multiplier=5.5, latency_mul=1.5, ttl=28.0),
+                [],
             ),
-            "search_index_fail": Scenario(
-                service="search", level_override="ERROR",
-                multiplier=3.0, latency_mul=4.0, ttl=20.0,
+            "search_index_fail": (
+                Scenario(service="search", level_override="ERROR",
+                         multiplier=3.2, latency_mul=4.0, ttl=24.0),
+                [
+                    Scenario(service="gateway", level_override="WARN",
+                             multiplier=1.6, latency_mul=1.4, ttl=22.0),
+                ],
+            ),
+            "checkout_retry_storm": (
+                Scenario(service="checkout", level_override="WARN",
+                         multiplier=3.5, latency_mul=2.0, ttl=28.0),
+                [
+                    Scenario(service="cart",     level_override="WARN",
+                             multiplier=1.7, latency_mul=1.4, ttl=24.0),
+                    Scenario(service="payments", level_override="WARN",
+                             multiplier=1.4, latency_mul=1.3, ttl=24.0),
+                ],
+            ),
+            "recommendations_cold": (
+                Scenario(service="recommendations", level_override="WARN",
+                         multiplier=3.0, latency_mul=6.0, ttl=26.0),
+                [],
             ),
         }
-        s = presets.get(kind)
-        if not s:
+        entry = presets.get(kind)
+        if not entry:
             return None
-        s.started = time.time()
-        self.scenarios.append(s)
-        return s
+        primary, cascade = entry
+        now = time.time()
+        primary.started = now
+        self.scenarios.append(primary)
+        for s in cascade:
+            s.started = now + 2.0  # small lag for the cascade
+            self.scenarios.append(s)
+        return primary
 
     def _prune(self, now: float) -> None:
         self.scenarios = [s for s in self.scenarios if s.active(now)]
@@ -336,7 +381,17 @@ class Generator:
             "inventory_deadlock",
             "notifications_flood",
             "search_index_fail",
+            "checkout_retry_storm",
+            "recommendations_cold",
         ]
+
+    def active_scenarios(self) -> list[str]:
+        now = time.time()
+        names: list[str] = []
+        for s in self.scenarios:
+            if s.active(now):
+                names.append(s.service)
+        return sorted(set(names))
 
 
 async def run_generator(bus, stop_evt: asyncio.Event, base_rate: float, burst_rate: float) -> None:
