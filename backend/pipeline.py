@@ -13,10 +13,13 @@ websocket tick and a handful of deep-dive helpers for REST endpoints.
 from __future__ import annotations
 
 import asyncio
+import logging
 import math
 import time
 from collections import OrderedDict, deque
 from dataclasses import dataclass, field
+
+logger = logging.getLogger(__name__)
 
 import numpy as np
 
@@ -173,7 +176,7 @@ class Pipeline:
             try:
                 self._run_detection_once()
             except Exception as e:
-                print(f"[detector] error: {e}")
+                logger.exception("[detector] error: %s", e)
 
     def _run_detection_once(self) -> None:
         storage = self.state.storage
@@ -232,7 +235,7 @@ class Pipeline:
             try:
                 self.state.last_correlation = self._compute_correlation()
             except Exception as e:
-                print(f"[correlation] error: {e}")
+                logger.exception("[correlation] error: %s", e)
 
     def _compute_correlation(self) -> CorrelationMatrix:
         services, rates = self.state.storage.error_rate_matrix(settings.window_seconds)
