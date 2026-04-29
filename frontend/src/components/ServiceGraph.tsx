@@ -105,7 +105,7 @@ export default function ServiceGraph({ graph, incident, onNodeClick }: Props) {
       .attr("class", "link")
       .attr("stroke", "rgba(148,163,184,0.25)")
       .attr("stroke-width", 1);
-    const linkMerged = linkEnter.merge(linkSel as any)
+    const linkMerged = linkEnter.merge(linkSel as d3.Selection<SVGLineElement, SimLink, SVGGElement, unknown>)
       .attr("stroke", (d) => {
         const src = (d.source as SimNode).id;
         const tgt = (d.target as SimNode).id;
@@ -128,7 +128,7 @@ export default function ServiceGraph({ graph, incident, onNodeClick }: Props) {
     nodeEnter.append("text").attr("class", "label");
     nodeEnter.append("text").attr("class", "hop");
 
-    const nodeMerged = nodeEnter.merge(nodeSel as any);
+    const nodeMerged = nodeEnter.merge(nodeSel as d3.Selection<SVGGElement, SimNode, SVGGElement, unknown>);
 
     nodeMerged.select<SVGCircleElement>("circle.dot")
       .attr("r", (d) => 6 + Math.min(d.logs_per_min / 6, 10))
